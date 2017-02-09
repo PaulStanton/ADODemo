@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -47,11 +48,54 @@ namespace ADODemo
         {
             string con = GetConnectionString();
             string query = GetQueryString();
-            ConnectionHelper.OpenSqlConnection();
-            ShowReadResult(con, query);
+            DataSet ds = GetDisconnectedResult(con, query);
+            QueryDataSet(ds);
+           /* ConnectionHelper.OpenSqlConnection();
+            ShowReadResult(con, query);*/
+
+
             Console.ReadLine();
         }
 
+        public static void  QueryDataSet (DataSet ds)
+        {
+            DataTable bears = ds.Tables[0];
+            var query = from s in bears.AsEnumerable()
+                        where s.Field<string>("Name").Length > 15
+                        select new
+                        {
+                            Name = s.Field<string>("Name"),
+                            Cave = s.Field<string>("CaveName"),
+                            BearType = s.Field<string>("TypeName")
+                        };
+
+            Console.WriteLine("{0,-25}{1,-25}{2,-25}", "Name", "Type", "Cave");
+               foreach (var q in query)
+            {
+                Console.WriteLine("{0,-25}{1,-25}{2,-25}", q.Name,q.BearType,q.Cave);
+                    
+            }
+          
+                    
+
+        }
+
+        public static DataSet GetDisconnectedResult(string connection, string query)
+        {
+
+            using (SqlConnection sqlcon = new SqlConnection(connection))
+            {
+                DataSet ds = new DataSet();
+                SqlDataAdapter adapter = new SqlDataAdapter();
+
+                adapter.SelectCommand = new SqlCommand(query, sqlcon);
+
+                adapter.Fill(ds);
+                
+                return ds;
+            }
+               
+        }
         public static void ShowReadResult(string connection, string query)
         {
             using (SqlConnection sqlcon = new SqlConnection(connection))
